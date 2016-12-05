@@ -1,0 +1,6 @@
+[submodule "perl-cross.fork"]
+	path = perl-cross.fork
+	url = https://github.com/libertine-linux-forks/perl-cross.git
+[submodule "upstream"]
+	path = upstream
+	url = https://github.com/Perl/perl5.git

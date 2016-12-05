@@ -1,0 +1,169 @@
+# This file is part of libertine linux's package perl. It is subject to the license terms in the COPYRIGHT file found in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/perl/master/COPYRIGHT. No part of libertine linux's package perl, including this file, may be copied, modified, propagated, or distributed except according to the terms contained in the COPYRIGHT file.
+# Copyright © 2016 The developers of libertine linux's package perl. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/perl/master/COPYRIGHT.
+
+
+variant=upstream
+
+case "$package" in
+	
+	build_perl)
+		
+		build_provides perl pod2man pod2html pod2text pod2usage podchecker podselect
+				
+		build_needs cc ar ld ranlib objdump readelf
+		libertine_compile_build_perl()
+		{
+			_libertine_compile_perl_internal "$(libertine_public_outputBuildSysrootPath)" false
+		}
+		
+	;;
+	
+	perl)
+	
+		depends busybox
+		
+		depends build_musl_cross_make_host
+		build_needs "$libertine_host"-cc "$libertine_host"-ar "$libertine_host"-ranlib "$libertine_host"-objdump "$libertine_host"-readelf
+		build_needs "$libertine_host"-strip
+		
+		depends build_musl_cross_make_build
+		build_needs "$libertine_build"-cc "$libertine_build"-ar "$libertine_build"-ranlib "$libertine_build"-objdump "$libertine_build"-readelf
+		libertine_compile_perl()
+		{
+			_libertine_compile_perl_internal "$(libertine_public_outputHostSysrootPath)" true
+		}
+		
+	;;
+	
+esac
+	
+depends build_gnumake
+build_needs make
+
+depends build_ccache
+build_needs ccache
+
+depends build_gnuconfig
+
+# Used in perl-cross configure, miniperl_top, etc
+depends build_busybox
+build_needs env sh dirname sed cat mkdir ln basename cp date seq head egrep tail cut hostname cat tr sed expr patch rm rmdir pwd true touch ls
+
+build_needs rm cat chmod sed mkdir
+_libertine_compile_perl_internal()
+{
+	local destinationSysrootPath="$1"
+	local isForInitramfsSysroot="$2"
+	
+	local perlCrossName=perl-cross.fork
+	
+	pushd "$(libertine_public_packagePath)"/"$perlCrossName"
+		
+		pushd cnf
+		
+			libertine_public_autoconf_replaceWithKnownVersionOfConfigSub ./
+			libertine_public_autoconf_replaceWithKnownVersionOfConfigGuess ./
+		
+		popd
+		
+	popd
+	
+	libertine_public_copy "$(libertine_public_packagePath)"/"$perlCrossName"/. "$(libertine_public_sourcePath)"/
+		
+	pushd "$(libertine_public_sourcePath)"
+		
+		rm -rf GNUmakefile
+				
+		# gcc warnings produce stderr output which can be mis-interpreted; disable them
+		printf '' >cnf/hints/default-gcc
+		
+		# There is a bug in Alpine Linux 3.4, which applies an independent fortify source implementation to musl: http://www.openwall.com/lists/musl/2015/02/04/1 / http://git.2f30.org/fortify/
+		# This causes any program which just #include <stdlib.h> to fail - so the configure checks above fail to detect stdlib
+		# We fix this by adjusting the linux hint
+		cat >>cnf/hints/linux <<-EOF
+			i_stdlib=define
+			
+			d_siginfo_si_errno=define
+			d_siginfo_si_pid=define
+			d_siginfo_si_uid=define
+			d_siginfo_si_addr=define
+			d_siginfo_si_band=define
+			d_siginfo_si_value=define
+			d_siginfo_si_fd=define
+		EOF
+	
+		if $isForInitramfsSysroot; then
+			local envPath='/usr/bin/env'
+		else
+			local envPath="$(libertine_public_PATH)"/env
+		fi
+		local buildEnvPath="$(libertine_public_PATH)"/env
+		
+		# perl-cross wants to use file, but we don't want to build it before perl...
+		local fakeFileProgramToFoolPerlCross="$(libertine_public_PATH)"/file
+		cat >"$fakeFileProgramToFoolPerlCross" <<-EOF
+			#!${buildEnvPath} sh
+			printf '%s\n' 'ELF'
+		EOF
+		chmod +x "$fakeFileProgramToFoolPerlCross"
+		
+		# https://arsv.github.io/perl-cross/usage.html
+		
+		if $isForInitramfsSysroot; then
+			local prefix=/usr
+		else
+			local prefix="$destinationSysrootPath"/usr
+		fi
+		
+		set -- --prefix="$prefix" --build="$libertine_build"
+		
+		if $isForInitramfsSysroot; then
+			
+			libertine_public_populateInputSysroot
+			
+			set -- "$@" --target="$libertine_host" --sysroot="$(libertine_public_inputSysrootPath)"
+		fi
+		
+		./configure --all-static "$@"
+				
+		# Add ccache links after configure as it confuses perl-cross cnf/configure_proh.sh: check whichprog "C compiler" cc 1      ${ttp}gcc ${ttp}cc
+		libertine_public_ccache_createSymlinks
+		
+		# We are not running from a dist but from git, hence these are missing
+		local missingPodFileBaseName
+		for missingPodFileBaseName in perlaix perlamiga perlandroid perlbs2000 perlce perlcn perlcygwin perldos perlfreebsd perlhaiku perlhpux perlhurd perlirix perljp perlko perllinux perlmacos perlmacosx perlnetware perlopenbsd perlos2 perlos390 perlos400 perlplan9 perlqnx perlriscos perlsolaris perlsymbian perlsynology perltru64 perltw perlvos perlwin32
+		do
+			sed -i -e '/'"$missingPodFileBaseName"'/d' pod/perl.pod
+		done
+		
+		# We have had failures with parallel builds
+		libertine_public_makeSerial
+		
+		if $isForInitramfsSysroot; then
+			libertine_public_make DESTDIR="$destinationSysrootPath" install
+		else
+			libertine_public_make install
+		fi
+		
+	popd
+	
+	# Clean up guff
+	pushd "$destinationSysrootPath"/usr/bin
+	
+		set +f
+			rm -rf perl5.*
+		set -f
+		
+		sed -i -e 's;^#!/usr/bin/perl$;#!'"$envPath"' perl;g' c2ph corelist cpan enc2xs encguess h2ph h2xs instmodsh json_pp libnetcfg perlbug perldoc perlivp perlthanks piconv pl2pm pod2html pod2man pod2text pod2usage podchecker podselect prove pstruct ptar ptardiff ptargrep shasum splain xsubpp zipdetails
+	
+	popd
+	
+	if $isForInitramfsSysroot; then
+		
+		libertine_public_installAndStripBinariesIn bin perl
+		
+		mkdir -m 0755 -p "$(libertine_public_outputInitramfsPath)"/usr/lib
+		
+		libertine_public_copy "$destinationSysrootPath"/usr/lib/. "$(libertine_public_outputInitramfsPath)"/usr/lib/
+	fi
+}
