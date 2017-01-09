@@ -95,12 +95,12 @@ _libertine_compile_perl_internal()
 		if $isForInitramfsSysroot; then
 			local envPath='/usr/bin/env'
 		else
-			local envPath="$(libertine_public_PATH)"/env
+			local envPath="$(libertine_public_buildNeedsPath)"/env
 		fi
-		local buildEnvPath="$(libertine_public_PATH)"/env
+		local buildEnvPath="$(libertine_public_buildNeedsPath)"/env
 		
 		# perl-cross wants to use file, but we don't want to build it before perl...
-		local fakeFileProgramToFoolPerlCross="$(libertine_public_PATH)"/file
+		local fakeFileProgramToFoolPerlCross="$(libertine_public_buildNeedsPath)"/file
 		cat >"$fakeFileProgramToFoolPerlCross" <<-EOF
 			#!${buildEnvPath} sh
 			printf '%s\n' 'ELF'
