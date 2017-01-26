@@ -26,6 +26,9 @@ case "$package" in
 		build_needs "$libertine_host"-cc "$libertine_host"-ar "$libertine_host"-ranlib "$libertine_host"-objdump "$libertine_host"-readelf
 		build_needs "$libertine_host"-strip
 		
+		depends build_paxctl
+		build_needs paxctl
+		
 		depends build_musl_cross_make_build
 		build_needs "$libertine_build"-cc "$libertine_build"-ar "$libertine_build"-ranlib "$libertine_build"-objdump "$libertine_build"-readelf
 		libertine_compile_perl()
@@ -160,7 +163,7 @@ _libertine_compile_perl_internal()
 	
 	if $isForInitramfsSysroot; then
 		
-		libertine_public_installAndStripBinariesIn bin perl
+		libertine_public_installAndStripBinaryIn bin perl
 		
 		mkdir -m 0755 -p "$(libertine_public_outputInitramfsPath)"/usr/lib
 		
