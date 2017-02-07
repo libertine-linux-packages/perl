@@ -49,8 +49,12 @@ build_needs ccache
 depends build_gnuconfig
 
 # Used in perl-cross configure, miniperl_top, etc
+depends build_netbsd_src_patch
+build_needs patch
+
+# Used in perl-cross configure, miniperl_top, etc
 depends build_busybox
-build_needs env sh dirname sed cat mkdir ln basename cp date seq head egrep tail cut hostname cat tr sed expr patch rm rmdir pwd true touch ls
+build_needs env sh dirname sed cat mkdir ln basename cp date seq head egrep tail cut hostname cat tr sed expr rm rmdir pwd true touch ls
 
 build_needs rm cat chmod sed mkdir
 _libertine_compile_perl_internal()
