@@ -2,9 +2,7 @@
 	path = perl-cross.fork
 	url = https://github.com/libertine-linux-forks/perl-cross.git
 	branch = master
-	libertine-linux-upstream = https://github.com/libertine-linux-forks/perl-cross.git
 [submodule "upstream"]
 	path = upstream
 	url = https://github.com/libertine-linux-clones/perl5.git
 	branch = master
-	libertine-linux-upstream = https://github.com/Perl/perl5.git
