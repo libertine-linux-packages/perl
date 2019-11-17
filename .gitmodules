@@ -2,15 +2,14 @@
 	path = perl-cross.fork
 	url = https://github.com/libertine-linux-forks/perl-cross.git
 	branch = master
-[submodule "upstream"]
-	path = upstream
-	url = https://github.com/libertine-linux-clones/perl5.git
-	branch = master
 	update = checkout
 	ignore = none
 	fetchRecurseSubmodules = true
 	shallow = true
-[submodule "perl-cross"]
+[submodule "upstream"]
+	path = upstream
+	url = https://github.com/libertine-linux-clones/perl5.git
+	branch = master
 	update = checkout
 	ignore = none
 	fetchRecurseSubmodules = true
