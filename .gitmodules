@@ -6,3 +6,8 @@
 	path = upstream
 	url = https://github.com/libertine-linux-clones/perl5.git
 	branch = master
+[submodule "perl-cross"]
+	update = checkout
+	ignore = none
+	fetchRecurseSubmodules = true
+	shallow = true
