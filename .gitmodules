@@ -5,7 +5,7 @@
 	update = checkout
 	ignore = none
 	fetchRecurseSubmodules = true
-	shallow = true
+	shallow = false
 [submodule "upstream"]
 	path = upstream
 	url = https://github.com/libertine-linux-clones/perl5.git
@@ -13,4 +13,4 @@
 	update = checkout
 	ignore = none
 	fetchRecurseSubmodules = true
-	shallow = true
+	shallow = false
